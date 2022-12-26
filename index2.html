@@ -1,0 +1,835 @@
+<?php
+
+session_start();
+
+if (isset($_SESSION["user_id"])) {
+    
+    $mysqli = require __DIR__ . "/database.php";
+    
+    $sql = "SELECT * FROM user
+            WHERE id = {$_SESSION["user_id"]}";
+            
+    $result = $mysqli->query($sql);
+    
+    $user = $result->fetch_assoc();
+}
+
+?>
+<html>
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, shrink-to-fit=no">
+    <meta name="theme-color" content="#000000" />
+    <title>Car Game</title>
+    <link rel="shortcut icon" type="image/x-icon" href="images/cars/car2.png">
+    <style>
+    	@font-face {
+           font-family: 'Baloo Tamma 2';
+           src: url(fonts/baloo.ttf);
+        }
+        @font-face {
+           font-family: 'Open Sans';
+           src: url(fonts/openSans.ttf);
+        }
+        *{ margin:0; padding: 0; }
+        .hide {
+            display: none;
+        }
+        
+        .car {
+        	z-index: 1;
+            position: absolute;
+            bottom: 160px;
+            margin: auto;
+            width: 70px;
+            height: 140px;
+            /*background-color: white;*/
+            line-height: 38px;
+            font-size: 1.7em;
+            text-align: center;
+            vertical-align: middle;
+            background-image: url(images/cars/car2.png);
+            background-repeat: no-repeat;
+            background-size: contain, cover;
+        }
+
+        .enemy {
+            position: absolute;
+            bottom: 160px;
+            margin: auto;
+            width: 70px;
+            height: 140px;
+            /*background-color: white;*/
+            line-height: 38px;
+            font-size: 1.7em;
+            text-align: center;
+            vertical-align: middle;
+            background-image: url(images/cars/car2.png);
+            background-repeat: no-repeat;
+            background-size: contain, cover;
+        }        
+        
+        .line {
+            position: absolute;
+            height: 100px;
+            width: 10px;
+            margin-left: 170px;
+            background-color: white;
+        }
+        
+        .speed {
+            position: absolute;
+            top:15px;
+            margin-left:10%;
+            background-color: black;
+            width:18%;
+            height: 35px;
+            text-align: center;
+            color: white;
+            font-size: 1.3em;
+            font-family: 'Baloo Tamma 2';
+            z-index: 1;
+            border-radius: 5px;
+            border:2px solid #a75188;
+        }
+
+        .score {
+            position: absolute;
+            top:15px;
+            margin-left:31%;
+            background-color: black;
+            width:35%;
+            height: 35px;
+            text-align: center;
+            color: white;
+            font-size: 1.4em;
+            font-family: 'Baloo Tamma 2';
+            z-index: 1;
+            border-radius: 5px;
+            border:2px solid #a72aae;
+        }
+
+        .topscore {
+            position: absolute;
+            top:75px;
+            margin-left:25%;
+            background-color: black;
+            width:50%;
+            height: 35px;
+            text-align: center;
+            color: #19e567;
+            font-size: 1.3em;
+            font-family: 'Baloo Tamma 2';
+            z-index: 2;
+            border-radius: 5px;
+            border:2px solid #c04aaa;
+        }        
+
+        .tilt {
+            position: absolute;
+            top:15px;
+            margin-left:69%;
+            background-color: black;
+            width:20%;
+            height: 35px;
+            text-align: center;
+            color: white;
+            font-size: 1.2em;
+            font-family: 'Baloo Tamma 2';
+            z-index: 1;
+            border-radius: 5px;
+            border:2px solid #bc45ac;
+        }        
+
+        .fadeout{
+        	  opacity: 0;
+              transition: opacity 6000ms;
+        }
+        
+        .gameArea {
+            background-color: #161616;
+            width: 350px;
+            height: 100%;
+            overflow: hidden;
+            position: relative;
+            margin: auto;
+            border-left:10px dashed #fff200;
+            border-right:10px dashed #fff200;
+        }
+        .keys{
+           width:60px;
+           height:60px;
+           position: absolute;
+           z-index: 2;
+        }
+        .left{
+           margin-left:10px;
+           top:90vh;
+           z-index: 2;
+        }
+        .right{
+           margin-left:80%;
+           top:90vh;
+           z-index: 2;
+        } 
+        .down{
+           margin-left:10px;
+           top:80vh;
+           z-index: 2;
+        }    
+        .up{
+           margin-left:80%;
+           top:80vh;
+           z-index: 2;
+        }                       
+        .startScreen {
+            position: absolute;
+            margin-left: 25%;
+            top: 350px;
+            background-color: rgb(42, 39, 100);
+            border-radius: 5px;
+            font-size: 18px;
+            border:3px solid #3020d7;
+            color: #526093;
+            z-index: 4;
+            text-align: center;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            width: 50%;
+            font-family: 'Open Sans';
+        }
+
+        .tiltscreen {
+            position: absolute;
+            margin-left: 15%;
+            top: 100px;
+            background-color: #000;
+            border-radius: 5px;
+            font-size: 18px;
+            border:3px solid #5408d0;
+            color: #4985bc;
+            z-index: 3;
+            text-align: center;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            width: 70%;
+            height: 45%;
+            font-family: 'Open Sans';
+            background-image: url(images/controls/tilt.png);
+            background-repeat: no-repeat;
+            background-size: contain, cover;
+            background-position:center;
+        }
+
+        .buttonscreen {
+            position: absolute;
+            margin-left: 15%;
+            top: 100px;
+            background-color: #000;
+            border-radius: 5px;
+            font-size: 18px;
+            border:3px solid #4c64a9;
+            color: #be32ff;
+            z-index: 1;
+            text-align: center;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            width: 70%;
+            height: 45%;
+            font-family: 'Open Sans';
+            background-image: url(images/controls/button.png);
+            background-repeat: no-repeat;
+            background-size: contain, cover;
+            background-position:center;
+        }   
+
+        .flashscreen {
+            z-index: 3;        	
+            position: absolute;
+            margin-left: 15%;
+            top: 150px;
+            background-color: #000;
+            border-radius: 5px;
+            font-size: 1.6em;
+            background-color : #273746;
+            color: #ffffff;
+            text-align: center;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            width: 70%;
+            height: 8%;
+            font-family: 'Baloo Tamma 2';
+        }   
+
+        .flashscreen1 {
+            position: absolute;
+            margin-left: 15%;
+            top: 150px;
+            background-color: #000;
+            border-radius: 5px;
+            font-size: 1.3em;
+            background-color : #273746;
+            color: #ffffff;
+            z-index: 3;
+            text-align: center;
+            padding-top: 10px;
+            padding-bottom: 10px;
+            width: 70%;
+            height: 8%;
+            font-family: 'Baloo Tamma 2';
+        }    
+
+        .nitro{
+        	position: absolute;
+        	z-index: 5;
+        	top: 85vh;
+        	left:50%;
+        	margin-left: -45px;
+        	width: 90px;
+        	height: 90px;
+        }  
+        .feedback{ 
+        	position: absolute;
+        	z-index: 6;
+         top: 85vh; 
+        	margin-left: 5%;
+        	width: 30%;
+        	height: 50px;
+        	font-family: 'Open Sans';
+        	font-size: 13px;
+        	color: #ffffff;
+        	background-color: #000000;
+        	border-radius: 5px;
+        	text-align: center;
+        	padding-top: 5;
+        	border:3px solid #f0f4f5;
+        }   
+       
+              
+     .feedback button{
+        /* color: #19e567; */
+    
+/* CSS */
+  background: #5E5DF0;
+  align-items: center;
+  border-radius: 999px;
+  box-shadow: #5E5DF0 0 10px 20px -10px;
+  box-sizing: border-box;
+  color: #FFFFFF;
+  cursor: pointer;
+  font-family: Inter,Helvetica,"Apple Color Emoji","Segoe UI Emoji",NotoColorEmoji,"Noto Color Emoji","Segoe UI Symbol","Android Emoji",EmojiSymbols,-apple-system,system-ui,"Segoe UI",Roboto,"Helvetica Neue","Noto Sans",sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+  opacity: 1;
+  outline: 0 solid transparent;
+  padding: 8px 18px;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: manipulation;
+  width: fit-content;
+  word-break: break-word;
+  border: 0;
+}
+     
+        .carGame{
+            width:100%;
+            height:100vh;
+            background-color: #3d3d3d;
+            overflow: hidden;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="carGame">
+    <div class="game" style="overflow: hidden;">
+    	<div class="speed"></div>
+        <div class="score"></div>
+        <div class="tilt"></div>
+        <div class="topscore"></div>
+        <div class="startScreen">
+            <span style="color:rgb(81, 93, 183);"><span style="color:#ffffff;"></span>
+            <br> <span style='font-size:30px;color:#57c0b7;'>Lets play a game </span>
+            <br><span style='font-size:10px;color:#ffffff;'>To continue press here</span>
+            </div>
+            <div class="tiltscreen hide"></div>
+            <div class="buttonscreen hide"></div>
+            <div class="flashscreen hide">New High Score !</div>
+            <div class="flashscreen1 hide"></div>
+            <div class="nitro"></div>
+            <div class="feedback hide"> <span style='font-size:50px;color:#703c75;'>
+              <a href="GAME1.HTML">
+                <button class="btn btn-primary btn-lg" >home</button>
+              </a>
+              <a href="index2.html">
+                <button class="btn btn-primary btn-lg" >play again</button>
+              </a>
+            </span></div>
+        <div class="gameArea">
+        </div>
+    </div>
+    </div>
+    <script type="text/javascript">
+        startSound = new Audio('sounds/intro.mp3');    
+        carSound = new Audio('sounds/racing.mp3');  
+        crashSound = new Audio('sounds/accident.mp3');   
+        const score = document.querySelector(".score");
+        const topscore = document.querySelector(".topscore");
+        const startScreen = document.querySelector(".startScreen");
+        const gameArea = document.querySelector(".gameArea");
+        const game = document.querySelector(".game");
+        const speed = document.querySelector(".speed");
+        const tilt = document.querySelector(".tilt");
+        const tiltscreen = document.querySelector(".tiltscreen");
+        const buttonscreen = document.querySelector(".buttonscreen");
+        const flashscreen = document.querySelector(".flashscreen");
+        const flashscreen1 = document.querySelector(".flashscreen1");
+        const nitro = document.querySelector(".nitro");
+        const feedback = document.querySelector(".feedback");
+        
+        let player = {
+            speed: 5
+            , score: 0,
+            adjustside: 12,
+            adjusttop: 19,
+            shown: 0,
+            nitro: 0,
+            prevspeed: 0
+        };
+        let keys = {
+            ArrowUp: false
+            , ArrowDown: false
+            , ArrowRight: false
+            , ArrowLeft: false
+        };
+        startScreen.addEventListener("click", start2);
+        document.addEventListener("keydown", pressOn);
+        document.addEventListener("keyup", pressOff);
+
+        function moveLines() {
+            let lines = document.querySelectorAll(".line");
+            lines.forEach(function (item) {
+                if (item.y >= 1500) {
+                    item.y -= 1500;
+                }
+                item.y += player.speed;
+                item.style.top = item.y + "px";
+            })
+        }
+
+        function isCollide(a, b) {
+            let aRect = a.getBoundingClientRect();
+            let bRect = b.getBoundingClientRect();
+            if(player.nitro==0){
+            return !(
+                (aRect.bottom < (bRect.top + player.adjusttop)) || ((aRect.top + player.adjusttop) > bRect.bottom) || (aRect.right < (bRect.left + player.adjustside)) || ((aRect.left + player.adjustside) > bRect.right))
+            }
+            else{
+            	return false;
+            }
+        }
+
+        function cooloff(){
+        	setTimeout(function(){ player.nitro = 0; }, 2000);
+        }
+
+        function nitroff(){
+            window.navigator.vibrate(300);
+        	player.prevspeed = player.speed;
+            nitro.innerHTML = "<img src='images/nitro/nitron.gif' style='width:100%;height:100%;'>";
+            player.nitro = 1;
+            player.speed = player.speed + 15;
+            setTimeout(function(){ player.speed = player.prevspeed; nitro.innerHTML = ""; cooloff(); }, 3000);
+        }       
+ 
+        function nitrostart(){
+        	nitro.innerHTML = "<img src='images/nitro/nitroff.png' style='width:100%;height:100%;'>";
+        	nitro.addEventListener("click", nitroff);
+        }
+
+        function moveEnemy(car) {
+            let ele = document.querySelectorAll(".enemy");
+            ele.forEach(function (item) { 
+                if (isCollide(car, item)) {
+                    //console.log("HIT");
+                    carSound.pause();
+                    crashSound.play();
+                    endGame();
+                }
+                if (item.y >= 1500) {
+                    item.y = -600;
+                    item.style.left = Math.floor(Math.random() * 300) + "px";
+                    item.style.backgroundImage = "url('images/cars/"+randomNumberGenerator(1,19)+".png')";
+                }
+                item.y += player.speed;
+                item.style.top = item.y + "px";
+            })
+           if(player.score>=500 && player.score%500 == 0){
+                player.speed = player.speed + 1;
+            } 
+
+            if(player.score>0 && player.score%1500 == 0){
+                nitrostart();
+            }
+
+            if(player.score >= 1500 && player.score<1501){
+            	flashscreen1.innerText = "Keep Going !";
+                flashscreen1.classList.remove("hide");
+                setTimeout(function(){ flashscreen1.classList.add("hide");}, 1400);
+            }
+
+            if(player.score >= 2500 && player.score<2501){
+            	flashscreen1.innerText = "Great Work !";
+                flashscreen1.classList.remove("hide");
+                setTimeout(function(){ flashscreen1.classList.add("hide");}, 1400);
+            }
+
+            if(player.score >= 4500 && player.score<4501){
+            	flashscreen1.innerHTML = "You are mastering <br>the game !";
+                flashscreen1.classList.remove("hide");
+                setTimeout(function(){ flashscreen1.classList.add("hide");}, 1400);
+            }
+
+            if(player.score >= 7500 && player.score<7501){
+            	flashscreen1.innerHTML = "You are a pro in <br>this game !";
+                flashscreen1.classList.remove("hide");
+                setTimeout(function(){ flashscreen1.classList.add("hide");}, 1400);
+            }
+
+            if(player.score >= 10000 && player.score<10001){
+            	flashscreen1.innerHTML = "This game is too <br>simple for you !";
+                flashscreen1.classList.remove("hide");
+                setTimeout(function(){ flashscreen1.classList.add("hide");}, 1400);
+            }               
+        }
+
+        function playGame() {
+            window.navigator.vibrate(200);
+        	//let tilted = getCookie("tilt");
+            let car = document.querySelector(".car");
+            moveLines();
+            moveEnemy(car);
+            let road = gameArea.getBoundingClientRect();
+            //console.log(player.y);
+            if (player.start ) {
+                if (keys.ArrowUp && player.y > (road.top - 70)) {
+                    player.y -= player.speed;
+                }
+                if (keys.ArrowDown && player.y < road.bottom) {
+                    player.y += player.speed;
+                }
+                if (keys.ArrowLeft && player.x > 0) {
+                    player.x -= player.speed;
+                }
+                if (keys.ArrowRight && player.x < (road.width - 90)) {
+                    player.x += player.speed;
+                }
+                car.style.left = player.x + 'px';
+                car.style.top = player.y + 'px';
+                window.requestAnimationFrame(playGame);
+                player.score++;
+                score.innerText = "Score: " + player.score;
+                speed.innerText = player.speed + " m/s";
+
+                let checkscore = Number(localStorage.score);
+                if((player.score > checkscore) && player.shown!==1 && checkscore!==0){
+                	player.shown = 1;
+                flashscreen.classList.remove("hide");
+                setInterval(function(){ flashscreen.classList.add("hide");}, 1300);
+            }                                              
+            
+            }
+        }
+
+        function pressOn(e) {
+            e.preventDefault();
+            keys[e.key] = true;
+        }
+
+        function pressOff(e) {
+            e.preventDefault();
+            keys[e.key] = false;
+        }
+
+        function endGame() {
+            window.navigator.vibrate(500);
+        	if(!flashscreen1.classList.contains("hide")){
+        		flashscreen1.classList.add("hide");
+        	}
+        		nitro.innerHTML = "";  
+        		feedback.classList.remove("hide");   	
+        	player.shown = 0;
+        	let cookiescore = Number(localStorage.score);
+            if(cookiescore<player.score){
+            localStorage.setItem("score", player.score);   
+             }
+            //startSound.play();
+            player.start = false;
+            startScreen.innerHTML = "<span style='color:#ff3232;font-size:26px;'>Game Over</span><br><span style='color:#19e567;'>Final Score is " + player.score +"</span><br>To play again<br><span style='color:#ffffff;'>Press here</span>";
+            startScreen.classList.remove("hide");
+            startScreen.addEventListener("click", startGameAfterGameOver);
+            score.classList.add("hide");
+            topscore.classList.add("hide");
+            speed.classList.add("hide");
+            tilt.classList.add("hide");
+            
+        }
+
+        function startGameAfterGameOver(){
+        	startScreen.classList.add("hide");
+        	start();
+        }
+
+        function start() {
+            if(localStorage.score==undefined){
+                localStorage.setItem("score", 0);
+            }
+            if(tilted==''){
+            localStorage.tilted = true;
+            }
+            window.navigator.vibrate(200);
+            var tilted = localStorage.tilted;
+            score.classList.remove("hide");
+            topscore.classList.remove("hide");
+            speed.classList.remove("hide");
+            tilt.classList.remove("hide");
+            tiltscreen.classList.add("hide");
+            buttonscreen.classList.add("hide");
+            tilt.addEventListener("click", tiltControl);
+            player.speed = 5;
+            crashSound.pause();
+            startSound.pause();
+            carSound.play();
+            //gameArea.classList.remove("hide");
+            gameArea.innerHTML = "";
+            player.start = true;
+            player.score = 0;
+            for (let x = 0; x < 10; x++) {
+                let div = document.createElement("div");
+                div.classList.add("line");
+                div.y = x * 150;
+                div.style.top = (x * 150) + "px";
+                gameArea.appendChild(div);
+            }
+            window.requestAnimationFrame(playGame);
+            let car = document.createElement("div");
+            //car.innerText = "Car";
+            car.setAttribute("class", "car");
+            gameArea.appendChild(car);
+            player.x = car.offsetLeft;
+            player.y = car.offsetTop;
+            for (let x = 0; x < 3; x++) {
+                let enemy = document.createElement("div");
+                enemy.classList.add("enemy");
+                //enemy.innerHTML = "<br>" + (x + 1);
+                enemy.y = ((x + 1) * 600) * -1;
+                enemy.style.top = enemy.y + "px";
+                enemy.style.left = Math.floor(Math.random() * 250) + "px";
+                //enemy.style.backgroundColor = randomColor();
+                randomNumber = randomNumberGenerator(1,19);
+                enemy.style.backgroundImage = "url('images/cars/"+randomNumber+".png')";
+                gameArea.appendChild(enemy);
+            }
+
+            let leftKey = document.createElement('img');
+            leftKey.classList.add("keys","left");
+            leftKey.src = "images/keys/left.png";
+            gameArea.appendChild(leftKey);
+            leftKey.addEventListener("touchstart", leftKeyOn);
+            leftKey.addEventListener("touchend", leftKeyOff);
+            let rightKey = document.createElement('img');
+            rightKey.classList.add("keys","right");
+            rightKey.src = "images/keys/right.png";
+            gameArea.appendChild(rightKey);
+            rightKey.addEventListener("touchstart", rightKeyOn);
+            rightKey.addEventListener("touchend", rightKeyOff);            
+            let downKey = document.createElement('img');
+            downKey.classList.add("keys","down");
+            downKey.src = "images/keys/down.png";
+            gameArea.appendChild(downKey);
+            downKey.addEventListener("touchstart", downKeyOn);
+            downKey.addEventListener("touchend", downKeyOff);    
+            let upKey = document.createElement('img');
+            upKey.classList.add("keys","up");
+            upKey.src = "images/keys/up.png";
+            gameArea.appendChild(upKey);
+            upKey.addEventListener("touchstart", upKeyOn);
+            upKey.addEventListener("touchend", upKeyOff); 
+            if(tilted=='true'){     
+            tilt.innerHTML = "Tilt : <span style='color:#19e567'>on</span>";
+            tilt.style.border = "2px solid #19e567";            	
+            leftKey.classList.add("hide");     
+            rightKey.classList.add("hide"); 
+            upKey.classList.add("hide"); 
+            downKey.classList.add("hide");   
+            window.addEventListener("deviceorientation", handleOrientation);    
+             }
+             else{
+            tilt.innerHTML = "Tilt : <span style='color:#ff3232'>off</span>";
+            tilt.style.border = "2px solid #ff3232";
+            leftKey.classList.remove("hide");     
+            rightKey.classList.remove("hide"); 
+            upKey.classList.remove("hide"); 
+            downKey.classList.remove("hide");                  	
+             }
+            var cookiescore = Number(localStorage.score); 
+            topscore.innerText = "Top Score : "+ cookiescore;
+        }
+
+        function tiltControl(){
+        	var tilted = localStorage.tilted;
+            const key1 = document.querySelector(".left");
+            const key2 = document.querySelector(".right");
+            const key3 = document.querySelector(".up");
+            const key4 = document.querySelector(".down");
+            if(tilted=='true'){
+            	localStorage.tilted = false;  
+                location.reload();  
+            }
+            else{
+            	localStorage.tilted = true;          
+                location.reload();
+            } 
+        }
+
+        function setCookie(cname,cvalue,exdays) {
+        	var d = new Date();
+  d.setTime(d.getTime() + (exdays * 24 * 60 * 60 * 1000));
+  var expires = "expires="+d.toUTCString();
+               document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+        }
+
+        function getCookie(cname) {
+               var name = cname + "=";
+               var decodedCookie = decodeURIComponent(document.cookie);
+               var ca = decodedCookie.split(';');
+               for(var i = 0; i < ca.length; i++) {
+                 var c = ca[i];
+                 while (c.charAt(0) == ' ') {
+                   c = c.substring(1);
+                 }
+                 if (c.indexOf(name) == 0) {
+                   return c.substring(name.length, c.length);
+                 }
+               }
+               return "";
+        }
+
+        function handleOrientation(event) {
+        	var tilted = localStorage.tilted;
+        	
+          event.preventDefault();
+          
+          var pi = Math.PI;
+          var beta     = Math.floor(event.beta)* (pi/180);
+          var gamma    = Math.floor(event.gamma)* (pi/180);
+           if(tilted=='true' && player.start){
+            if(gamma > 0.20 && gamma < 1.50 && tilted=='true'){
+              keys['ArrowRight'] = true;
+            }
+            else if(gamma > -1.50 && gamma < -0.20 && tilted=='true'){
+              keys['ArrowLeft'] = true;
+            }
+            else{
+              keys['ArrowRight'] = false;
+              keys['ArrowLeft'] = false;
+            }
+
+            if(beta > 0.50 && beta < 1.50 && tilted=='true'){
+              keys['ArrowDown'] = true;
+            }
+            else if(beta > -1.50 && beta < 0.10 && tilted=='true'){
+              keys['ArrowUp'] = true;
+            }
+            else{
+              keys['ArrowUp'] = false;
+              keys['ArrowDown'] = false;
+                          
+            }  
+        }
+  
+ 
+        } 
+
+        function randomNumberGenerator(min,max){
+            return Math.floor(Math.random()*(max-min+1)+min);
+        }
+
+        function start1(){
+        	if(!feedback.classList.contains("hide")){
+        		feedback.classList.add("hide");
+        	}
+        	startScreen.classList.add("hide");
+            var tilted = localStorage.tilted;
+            if(tilted==''){
+              buttonscreen.classList.remove("hide");
+              buttonscreen.addEventListener("click", start);
+            }
+            else if(tilted=='true'){
+              tiltscreen.classList.remove("hide");
+              tiltscreen.addEventListener("click", start);
+            }
+            else{
+              buttonscreen.classList.remove("hide");
+              buttonscreen.addEventListener("click", start);
+            }
+             startSound.play(); 
+        }
+
+        function start2(){
+        	startScreen.innerHTML = "<span style='color:#ffffff;'>To switch <span style='color:#19e567;'>ON</span> and <span style='color:#ff3232;'>OFF</span><br><span style='color:orange;'>Tilt Mode</span><br>press on the <span style='color:#19e567;'>top<br>right side button</span> !<br><span style='font-size:10px;'>To continue press here</span></span>";
+        	startScreen.addEventListener("click", start1);
+        }
+
+        function leftKeyOn(e){
+            e.preventDefault();
+            keys['ArrowLeft'] = true;
+        }
+
+        function leftKeyOff(e){
+            e.preventDefault();
+            keys['ArrowLeft'] = false;
+        }     
+
+        function rightKeyOn(e){
+            e.preventDefault();
+            keys['ArrowRight'] = true;
+        }
+
+        function rightKeyOff(e){
+            e.preventDefault();
+            keys['ArrowRight'] = false;
+        }     
+
+        function downKeyOn(e){
+            e.preventDefault();
+            keys['ArrowDown'] = true;
+        }
+
+        function downKeyOff(e){
+            e.preventDefault();
+            keys['ArrowDown'] = false;
+        }    
+
+        function upKeyOn(e){
+            e.preventDefault();
+            keys['ArrowUp'] = true;
+        }
+
+        function upKeyOff(e){
+            e.preventDefault();
+            keys['ArrowUp'] = false;
+        }                  
+
+        function randomColor() {
+            function c() {
+                let hex = Math.floor(Math.random() * 256).toString(16);
+                return ("0" + String(hex)).substr(-2)
+            }
+            return "#" + c() + c() + c();
+        }
+    </script>
+</body>
+
+</html>
